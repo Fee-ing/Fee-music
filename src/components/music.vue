@@ -197,6 +197,13 @@ export default {
 	    	Func.toast('加载中');
 	        this.pause();
 	    });
+
+      document.onkeydown = function(event) {
+        var e = event || window.event || arguments.callee.caller.arguments[0];
+        if (e && e.keyCode == 13) {
+          that.search();
+        }
+      };
 	},
 	watch: {
 	    'song.currentTime': 'updateSongProgress',
@@ -206,6 +213,8 @@ export default {
     getSongProgress() {
       if(0 < this.song.songProgress < 5) {
         return this.song.songProgress + 0.5;
+      } else {
+        return parseInt(this.song.songProgress);
       }
     }
   },
