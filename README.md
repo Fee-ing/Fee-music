@@ -2,6 +2,9 @@
 
 > A Vue.js project
 
+## 在线预览
+在线预览地址： [Fee's Music](https://fee-ing.github.io/Fee-music) (请务必用电脑打开，且尽量使用高版本浏览器)
+
 ## Build Setup
 
 ``` bash
