@@ -4,9 +4,9 @@ Vue.use(VueRouter)
 
 const router = new VueRouter({
   routes:[{
-    path:'/music',component:require('../views/music')
+    path:'/music',component:require('../components/music')
   },{
-    path:'/tip',component:require('../views/tip')
+    path:'/tip',component:require('../components/tip')
   },{
     path:'/',redirect:'/music'
   },{

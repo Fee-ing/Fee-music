@@ -13,16 +13,14 @@
 					<div class="song-tabbar flexbox">
 						<a class="tabbar-item flex1" :class="{ 'active' : songType === '1' }" @click="changeSongType('1')">搜索结果</a>
 						<a class="tabbar-item flex1" :class="{ 'active' : songType === '2' }" @click="changeSongType('2')">播放历史</a>
-						<a class="tabbar-item flex1" :class="{ 'active' : songType === '3' }" @click="changeSongType('3')">我喜欢的</a>
+						<a class="tabbar-item flex1" :class="{ 'active' : songType === '3' }" @click="changeSongType('3')">我想听的</a>
 					</div>
-					<div class="to-login-wrapper centerVertical flex1" v-show="songType === '3' && !userInfo">
-						<a class="to-login-btn option-button" @click="toLogin">登录</a>
-						<p class="to-login-tip">请先登录</p>
-					</div>
-					<div class="result-wrapper flex1 flexbox" v-show="songType !== '3' || userInfo">
+					<div class="result-wrapper flex1 flexbox">
 	  					<div class="result-tip" v-show="songType === '1'">共{{searchData.searchTotalNum}}个搜索结果</div>
 	  					<div class="result-tip" v-show="songType === '2'">共{{historySongList.length}}条历史记录（最多记录100条）</div>
+              <div class="result-tip" v-show="songType === '3'">共{{favorSongList.length}}首现在想听的（最多记录100首）</div>
 	  					<div class="result-list result-list-header">
+                <div class="option">{{ songType === '3' ? '移除' : '添加' }}</div>
 	  						<div class="songname">歌曲</div>
 	  						<div class="singer">歌手</div>
 	  						<div class="album">专辑</div>
@@ -30,7 +28,9 @@
 	  					</div>
 	  					<div class="result-list-wrapper flex1">
 	  						<div class="result-list" v-for="(item, index) in songList" :class="{'active': song.songid === item.songid}" @click.stop="getSong(item, index)">
-		  						<div class="songname" v-html="item.songname"></div>
+		  						<a class="option iconfont icon-jia" title="添加到我现在想听的" v-if="songType !== '3'" @click.stop="addFavor(item)"></a>
+                  <a class="option iconfont icon-Untitled"  title="从我想听的中移除" v-else  @click.stop="removeFavor(index)"></a>
+                  <div class="songname" v-html="item.songname"></div>
 		  						<div class="singer" v-html="getSinger(item.singer)"></div>
 		  						<div class="album" v-html="item.albumname"></div>
 		  						<div class="duration">{{getDuration(item.interval)}}</div>
@@ -50,7 +50,7 @@
 			</div>
 			
     	</div>
-    	<div class="music-footer" v-show="song.songSrc">
+    	<div class="music-footer">
     		<audio class="audio" autoplay="false" ref="audio" :src="song.songSrc">
 			  	<source :src="song.songSrc">
 			</audio>
@@ -58,19 +58,18 @@
     			<div class="song-img img" :style="{ backgroundImage: 'url(' + song.imgSrc + ')'}" @click="rotate"></div>
     			<div class="play-wrapper verticalbox">
     				<a class="iconfont icon-shangyishou" @click="preSong"></a>
-    				<a class="iconfont icon-bofang" ref="playOrPause" @click="playSong"></a>
+    				<a class="iconfont icon-cplay1" ref="playOrPause" @click="playSong"></a>
     				<a class="iconfont icon-xiayishou" @click="nextSong"></a>
     			</div>
     			<div class="progress-wrapper flex1">
     				<div class="songinfo-wrapper"><span class="song-name" v-html="song.songname"></span>-<span class="singer" v-html="song.singer"></span></div>
-    				<input type="range" class="song-progress" ref="songRange" :style="{ backgroundSize: song.songProgress + '% 100%'}" v-model="song.songProgress" @change.stop="changeSongProgress">
+    				<input type="range" class="song-progress" ref="songRange" :style="{ backgroundSize: getSongProgress + '% 100%'}" v-model="song.songProgress" @change.stop="changeSongProgress">
     				<div class="song-time">
     					<span class="now-time">{{getDuration(song.currentTime)}}</span>
     					<span class="total-time">{{getDuration(song.duration)}}</span>
     				</div>
     			</div>
     			<div class="option-wrapper verticalbox">
-    				<!-- <a class="iconfont icon-cplay1"></a> -->
     				<a class="iconfont play-type" :class="{ 'icon-xunhuan' : playSetting.playType === '1', 'icon-danquxunhuan' : playSetting.playType === '2', 'icon-suiji' : playSetting.playType === '3' }" @click="changePlayType"></a>
     				<a class="iconfont icon-xiazai" :href="song.songSrc" :download="song.songname"></a>
     				<a class="iconfont icon-shengyin" ref="voiceControl" @click.stop="showVoice">
@@ -92,7 +91,6 @@ import Base64 from '../assets/js/base64';
 export default {
 	data(){
 	    return {
-	    	userInfo: null,
 	    	searchData: {
 		      	keywords: '',
 		      	songList: [],
@@ -102,12 +100,13 @@ export default {
 	    	},
 	    	songList: [],
 	    	historySongList: [],
+        favorSongList: [],
 	    	songIndex: null,
-	    	songType: '1',
+	    	songType: '2',
 	    	song: {
-	    		songname: '',
+	    		songname: '无歌曲信息',
 	    		songid: '',
-	    		singer: '',
+	    		singer: '无歌手信息',
 	    		songSrc: '',
 	    		imgSrc: '',
 	    		duration: 0,
@@ -123,7 +122,8 @@ export default {
 	    		rotateDeg: 0,
 	    		playType: '1',
 	    		randomSongList: [],
-	    		randomIndex: 0
+	    		randomIndex: 0,
+          isPause: true
 	    	}
 	    }
 	},
@@ -131,6 +131,13 @@ export default {
 		let that = this;
 
 		Func.getStorage('Fee_historySongList') ? this.historySongList = JSON.parse(Func.getStorage('Fee_historySongList')) : this.historySongList = [];
+    Func.getStorage('Fee_favorSongList') ? this.favorSongList = JSON.parse(Func.getStorage('Fee_favorSongList')) : this.favorSongList = [];
+    this.songList = this.historySongList;
+    if (this.historySongList.length > 0) {
+      that.getSong(this.historySongList[0]);
+    } else {
+      that.playSetting.isPause = false;
+    }
 
 		that.$refs.audio.volume = that.song.voiceProgress/100;
 
@@ -162,6 +169,10 @@ export default {
 	    });
 	    this.$refs.audio.addEventListener('play',function(){  
 	        that.$refs.playOrPause.className = 'iconfont icon-bofang';
+          if (that.playSetting.isPause) {
+            this.pause();
+            that.playSetting.isPause = false;
+          }
 	    });
 	    this.$refs.audio.addEventListener('canplay',function(){  
 	        this.play();
@@ -191,6 +202,13 @@ export default {
 	    'song.currentTime': 'updateSongProgress',
 	    'songList': 'getRandomSongList'
 	},
+  computed: {
+    getSongProgress() {
+      if(0 < this.song.songProgress < 5) {
+        return this.song.songProgress + 0.5;
+      }
+    }
+  },
   	methods: {
   		stopPro(){},
   		changeSongType(type) {
@@ -199,7 +217,7 @@ export default {
   			} else if (type === '2') {
   				this.songList = this.historySongList;
   			} else if (type === '3') {
-
+          this.songList = this.favorSongList;
   			}
   			this.songType = type;
   		},
@@ -228,6 +246,7 @@ export default {
   				jsonp: 'jsonpCallback'
   			}).then((response) => {
 	            this.songIndex = null;
+              this.songType = '1';
 	            this.searchData.songList = response.data.data.song.list;
 	            this.songList = this.searchData.songList;
 	            this.searchData.searchPage = response.data.data.song.curpage;
@@ -286,10 +305,13 @@ export default {
   				this.historySongList.splice(99, 1);
   			}
   			this.historySongList = [song].concat(this.historySongList);
+        if (this.songType === '2') {
+          this.songList = this.historySongList;
+        }
   			Func.setStorage('Fee_historySongList', JSON.stringify(this.historySongList));
   		},
   		getSong(song, index) {
-  			this.songIndex = index;
+  			this.songIndex = index || 0;
   			if (this.playSetting.playType === '1') {
   				this.playSetting.randomIndex = index;
   			} else if (this.playSetting.playType === '2') {
@@ -442,9 +464,26 @@ export default {
   				this.playSetting.randomIndex = 0;
   			}
   		},
-  		toLogin() {
-  			Func.toast('敬请期待');
-  		}
+  		addFavor(song) {
+        for(let i = 0, len = this.favorSongList.length;i < len;i ++) {
+          if (song.songid === this.favorSongList[i].songid) {
+            Func.toast('已存在');
+            return;
+          }
+        }
+        if (this.favorSongList.length >= 100) {
+          Func.toast('超过限制');
+          return;
+        }
+        this.favorSongList = [song].concat(this.favorSongList);
+  			Func.toast('添加成功');
+        Func.setStorage('Fee_favorSongList', JSON.stringify(this.favorSongList));
+  		},
+      removeFavor(index) {
+        this.favorSongList.splice(index, 1);
+        Func.toast('移除成功');
+        Func.setStorage('Fee_favorSongList', JSON.stringify(this.favorSongList));
+      }
   	}
 }
 </script>
@@ -508,26 +547,18 @@ export default {
 		.song-tabbar{
 			height: 40px;
 			line-height: 40px;
-			margin: 10px 0; 
+			margin: 20px 0 10px; 
 			.tabbar-item{
 				text-align: center;
 				border-bottom: 1px solid #333;
-				border-top-left-radius: 25px;
-				border-top-right-radius: 25px;
+				border-top-left-radius: 20px;
+				border-top-right-radius: 20px;
 				&:hover{
 					color: #666;
 				}
 				&.active{
 					border: 1px solid #333;
 					border-bottom: none;
-					&:first-child{
-						border-left: none;
-						border-top-left-radius: 0px;
-					}
-					&:last-child{
-						border-right: none;
-						border-top-right-radius: 0px;
-					}
 				}
 			}
 		}
@@ -600,21 +631,21 @@ export default {
 				text-align: center;
 				border-radius: 5px;
 				&.active{
-					background-color: #444;
-					color: #fff;
+					background-color: #ddd;
+					color: #333;
 				}
 				&:hover{
-					background-color: #888;
-					color: #fff;
+					background-color: #aaa;
+					color: #333;
 				}
 				&.result-list-header{
-					color: #333;
+					color: #fff;
 					font-size: 14px;
 					cursor: inherit;
-					background-color: #ddd;
+					background-color: #444;
 					&:hover{
-						background-color: #ddd;
-						color: #333;
+						background-color: #444;
+						color: #fff;
 					}
 				}
 				div{
@@ -623,17 +654,20 @@ export default {
 					text-overflow: ellipsis;
 					padding: 0 5px;
 				}
+        .option{
+          width: 8%;
+        }
 				.songname{
-					width: 40%;
+					width: 38%;
 				}
 				.singer{
-					width: 20%;
+					width: 17%;
 				}
 				.album{
 					width: 20%;
 				}
 				.duration{
-					width: 20%;
+					width: 17%;
 				}
 			}
 		}
