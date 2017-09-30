@@ -1,4 +1,4 @@
-# editor
+# Fee-music
 
 > A Vue.js project
 
