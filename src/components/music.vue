@@ -57,13 +57,17 @@
     		<div class="music-footer-content verticalbox">
     			<div class="song-img img" :style="{ backgroundImage: 'url(' + song.imgSrc + ')'}" @click="rotate"></div>
     			<div class="play-wrapper verticalbox">
-    				<a class="iconfont icon-shangyishou" @click="preSong"></a>
+    				<a class="iconfont icon-shangyishou" @click="preSong" title="上一首"></a>
     				<a class="iconfont icon-cplay1" ref="playOrPause" @click="playSong"></a>
-    				<a class="iconfont icon-xiayishou" @click="nextSong"></a>
+    				<a class="iconfont icon-xiayishou" @click="nextSong" title="下一首"></a>
     			</div>
     			<div class="progress-wrapper flex1">
     				<div class="songinfo-wrapper"><span class="song-name" v-html="song.songname"></span>-<span class="singer" v-html="song.singer"></span></div>
-    				<input type="range" class="song-progress" ref="songRange" :style="{ backgroundSize: getSongProgress + '% 100%'}" v-model="song.songProgress" @change.stop="changeSongProgress">
+					<div class="song-progress" ref="sProgress" @mousedown.stop="jumpProgress">
+						<div class="current" :style="{ width: song.songProgress + '%'}">
+							<span class="current-point" @mousedown.stop="getStartX"></span>
+						</div>
+					</div>
     				<div class="song-time">
     					<span class="now-time">{{getDuration(song.currentTime)}}</span>
     					<span class="total-time">{{getDuration(song.duration)}}</span>
@@ -71,8 +75,8 @@
     			</div>
     			<div class="option-wrapper verticalbox">
     				<a class="iconfont play-type" :class="{ 'icon-xunhuan' : playSetting.playType === '1', 'icon-danquxunhuan' : playSetting.playType === '2', 'icon-suiji' : playSetting.playType === '3' }" @click="changePlayType"></a>
-    				<a class="iconfont icon-xiazai" :href="song.songSrc" :download="song.songname"></a>
-    				<a class="iconfont icon-shengyin" ref="voiceControl" @click.stop="showVoice">
+    				<a class="iconfont icon-xiazai" title="下载" :href="song.songSrc" :download="song.songname"></a>
+    				<a class="iconfont icon-shengyin" ref="voiceControl" title="音量" @click.stop="showVoice">
     					<div class="voice-progress-wrapper">
 	    					<input type="range" class="voice-progress" ref="voiceRange" :style="{ backgroundSize: song.voiceProgress + '% 100%'}" v-model="song.voiceProgress" @change.stop="changeVoiceProgress" @click.stop="stopPro">	
 	    				</div>
@@ -100,7 +104,7 @@ export default {
 	    	},
 	    	songList: [],
 	    	historySongList: [],
-        favorSongList: [],
+        	favorSongList: [],
 	    	songIndex: null,
 	    	songType: '2',
 	    	song: {
@@ -123,7 +127,7 @@ export default {
 	    		playType: '1',
 	    		randomSongList: [],
 	    		randomIndex: 0,
-          isPause: true
+          		isPause: true
 	    	}
 	    }
 	},
@@ -131,13 +135,13 @@ export default {
 		let that = this;
 
 		Func.getStorage('Fee_historySongList') ? this.historySongList = JSON.parse(Func.getStorage('Fee_historySongList')) : this.historySongList = [];
-    Func.getStorage('Fee_favorSongList') ? this.favorSongList = JSON.parse(Func.getStorage('Fee_favorSongList')) : this.favorSongList = [];
-    this.songList = this.historySongList;
-    if (this.historySongList.length > 0) {
-      that.getSong(this.historySongList[0]);
-    } else {
-      that.playSetting.isPause = false;
-    }
+		Func.getStorage('Fee_favorSongList') ? this.favorSongList = JSON.parse(Func.getStorage('Fee_favorSongList')) : this.favorSongList = [];
+		this.songList = this.historySongList;
+		if (this.historySongList.length > 0) {
+			that.getSong(this.historySongList[0]);
+		} else {
+			that.playSetting.isPause = false;
+		}
 
 		that.$refs.audio.volume = that.song.voiceProgress/100;
 
@@ -169,16 +173,18 @@ export default {
 	    });
 	    this.$refs.audio.addEventListener('play',function(){  
 	        that.$refs.playOrPause.className = 'iconfont icon-bofang';
-          if (that.playSetting.isPause) {
-            this.pause();
-            that.playSetting.isPause = false;
-          }
+			if (that.playSetting.isPause) {
+				this.pause();
+				that.playSetting.isPause = false;
+			}
 	    });
 	    this.$refs.audio.addEventListener('canplay',function(){  
 	        this.play();
 	    });
-	    this.$refs.audio.addEventListener('ended',function(){ 
-	    	that.playSetting.randomIndex >= that.playSetting.randomSongList.length - 1 ? that.playSetting.randomIndex = 0 : that.playSetting.randomIndex += 1;
+	    this.$refs.audio.addEventListener('ended',function(){
+			if(that.playSetting.playType !== '2') {
+				that.playSetting.randomIndex >= that.playSetting.randomSongList.length - 1 ? that.playSetting.randomIndex = 0 : that.playSetting.randomIndex += 1;
+			}
 	    	let index = that.playSetting.randomSongList[that.playSetting.randomIndex];
 	    	let song  = that.songList[index];
 	        that.getSong(song, index);
@@ -209,15 +215,6 @@ export default {
 	    'song.currentTime': 'updateSongProgress',
 	    'songList': 'getRandomSongList'
 	},
-  computed: {
-    getSongProgress() {
-      if(0 < this.song.songProgress < 5) {
-        return this.song.songProgress + 0.5;
-      } else {
-        return parseInt(this.song.songProgress);
-      }
-    }
-  },
   	methods: {
   		stopPro(){},
   		changeSongType(type) {
@@ -306,8 +303,7 @@ export default {
   		setHistorySong(song) {
   			for(let i = 0, len = this.historySongList.length;i < len;i ++) {
   				if (song.songid === this.historySongList[i].songid) {
-  					this.historySongList.splice(i, 1);
-  					break;
+  					return;
   				}
   			}
   			if (this.historySongList.length >= 100) {
@@ -321,11 +317,9 @@ export default {
   		},
   		getSong(song, index) {
   			this.songIndex = index || 0;
-  			if (this.playSetting.playType === '1') {
+  			if (this.playSetting.playType !== '3') {
   				this.playSetting.randomIndex = index;
-  			} else if (this.playSetting.playType === '2') {
-  				this.playSetting.randomIndex = 0;
-  			} else if (this.playSetting.playType === '3') {
+  			} else {
   				for(let i = 0, len = this.playSetting.randomSongList.length;i < len;i ++) {
   					if (this.playSetting.randomSongList[i] === index) {
   						this.playSetting.randomIndex = i;
@@ -375,19 +369,19 @@ export default {
   			}
   		},
   		preSong() {
-  			this.playSetting.randomIndex <= 0 ? this.playSetting.randomIndex = this.playSetting.randomSongList.length - 1 : this.playSetting.randomIndex -= 1;
+			this.playSetting.randomIndex <= 0 ? this.playSetting.randomIndex = this.playSetting.randomSongList.length - 1 : this.playSetting.randomIndex -= 1;
 	    	let index = this.playSetting.randomSongList[this.playSetting.randomIndex];
 	    	let song  = this.songList[index];
 	        this.getSong(song, index);
   		},
   		nextSong() {
-  			this.playSetting.randomIndex >= this.playSetting.randomSongList.length - 1 ? this.playSetting.randomIndex = 0 : this.playSetting.randomIndex += 1;
+			this.playSetting.randomIndex >= this.playSetting.randomSongList.length - 1 ? this.playSetting.randomIndex = 0 : this.playSetting.randomIndex += 1;
 	    	let index = this.playSetting.randomSongList[this.playSetting.randomIndex];
-	    	let song  = this.songList[index];
+			let song  = this.songList[index];
 	        this.getSong(song, index);
   		},
   		updateSongProgress() {
-  			this.song.songProgress = parseInt(this.song.currentTime/this.song.duration*100);
+  			this.song.songProgress = parseFloat(this.song.currentTime/this.song.duration*100).toFixed(3);
   		},
   		changeSongProgress() {
   			this.$refs.audio.currentTime = parseInt(this.$refs.audio.duration*this.song.songProgress/100)+1;
@@ -408,6 +402,36 @@ export default {
 	        	}
 	        }
   		},
+		jumpProgress() {
+			this.song.songProgress = parseFloat(event.offsetX/event.currentTarget.offsetWidth*100).toFixed(3)
+			this.changeSongProgress()
+		},
+		getStartX() {
+			let songWidth = this.$refs.sProgress.offsetWidth
+			let startX = event.clientX
+			let that = this
+			let progress = parseFloat(that.song.songProgress)
+			document.onmousemove = function(e){
+				e.stopPropagation()
+				e.preventDefault()
+				let moveX = e.clientX
+				if (that.song.songProgress >= 0 && that.song.songProgress <= 100) {
+					that.song.songProgress = progress + (moveX - startX)/songWidth*100
+					that.changeSongProgress()
+				}
+			}
+			document.onmouseup = function(e) {
+				e.stopPropagation()
+				e.preventDefault()
+				let endX = e.clientX
+				if (that.song.songProgress >= 0 && that.song.songProgress <= 100) {
+					that.song.songProgress = progress + (endX - startX)/songWidth*100
+					that.changeSongProgress()
+				}
+				document.onmousemove = null
+				document.onmouseup = null
+			}
+		},
   		showVoice() {
   			let that = event.currentTarget;
   			if (that.className.indexOf('active') >= 0) {
@@ -439,8 +463,8 @@ export default {
 			let len = this.songList.length;
   			if (this.playSetting.playType === '1') {
   				this.playSetting.playType = '2';
-  				this.playSetting.randomSongList = [index];
-  				this.playSetting.randomIndex = 0;
+  				this.playSetting.randomSongList = Array.apply(null, { length: len }).map((v, i) => i);
+  				this.playSetting.randomIndex = index;
   			} else if (this.playSetting.playType === '2') {
   				this.playSetting.playType = '3';
   				let arr = Array.apply(null, { length: len }).map((v, i) => i);
@@ -453,7 +477,7 @@ export default {
   				this.playSetting.playType = '1';
   				this.playSetting.randomSongList = Array.apply(null, { length: len }).map((v, i) => i);
   				this.playSetting.randomIndex = index;
-  			}
+			  }
   		},
   		getRandomSongList() {
   			let index = this.songIndex;
@@ -639,12 +663,13 @@ export default {
 				cursor: pointer;
 				text-align: center;
 				border-radius: 5px;
+				transition: all 0.2s;
 				&.active{
 					background-color: #ddd;
 					color: #333;
 				}
 				&:hover{
-					background-color: #aaa;
+					background-color: #ccc;
 					color: #333;
 				}
 				&.result-list-header{
@@ -758,7 +783,30 @@ export default {
       				}
       			}
 				.song-progress{
-					
+					width: 100%;
+					height: 10px;
+					background-color: #ccc;
+					border-radius: 5px;
+					margin: 10px 0;
+					.current{
+						width: 50%;
+						height: 100%;
+						position: relative;
+						background-color: #444;
+						border-radius: 5px;
+						.current-point{
+							position: absolute;
+							height: 20px;
+							width: 20px;
+							background: #fff;
+							border-radius: 50%; 
+							border: 1px solid #444;
+							cursor: pointer;
+							right: -10px;
+							top: -5px;
+							z-index: 10;
+						}
+					}
 				}
 				.song-time{
 					overflow: hidden;
@@ -796,6 +844,7 @@ export default {
       				}
       			}
       			.voice-num{
+					width: 18px;
       				font-size: 10px;
       				margin-left: 5px;
       			}
