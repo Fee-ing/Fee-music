@@ -4,7 +4,6 @@
   			<div class="music-search-wrapper flexbox">
   				<input type="text" class="search-input flex1" placeholder="想听什么就搜一搜吧" v-model="searchData.keywords">
   				<a class="option-button search-btn" @click.stop="search">搜索</a>
-  				
   			</div>
   		</div>
     	<div class="music-content">
@@ -18,9 +17,9 @@
 					<div class="result-wrapper flex1 flexbox">
 	  					<div class="result-tip" v-show="songType === '1'">共{{searchData.searchTotalNum}}个搜索结果</div>
 	  					<div class="result-tip" v-show="songType === '2'">共{{historySongList.length}}条历史记录（最多记录100条）</div>
-              <div class="result-tip" v-show="songType === '3'">共{{favorSongList.length}}首现在想听的（最多记录100首）</div>
+              			<div class="result-tip" v-show="songType === '3'">共{{favorSongList.length}}首现在想听的（最多记录100首）</div>
 	  					<div class="result-list result-list-header">
-                <div class="option">{{ songType === '3' ? '移除' : '添加' }}</div>
+                			<div class="option">{{ songType === '3' ? '移除' : '添加' }}</div>
 	  						<div class="songname">歌曲</div>
 	  						<div class="singer">歌手</div>
 	  						<div class="album">专辑</div>
@@ -29,8 +28,8 @@
 	  					<div class="result-list-wrapper flex1">
 	  						<div class="result-list" v-for="(item, index) in songList" :class="{'active': song.songid === item.songid}" @click.stop="getSong(item, index)">
 		  						<a class="option iconfont icon-jia" title="添加到我现在想听的" v-if="songType !== '3'" @click.stop="addFavor(item)"></a>
-                  <a class="option iconfont icon-sub"  title="从我想听的中移除" v-else  @click.stop="removeFavor(index)"></a>
-                  <div class="songname" v-html="item.songname"></div>
+                  				<a class="option iconfont icon-sub"  title="从我想听的中移除" v-else  @click.stop="removeFavor(index)"></a>
+                  				<div class="songname" v-html="item.songname"></div>
 		  						<div class="singer" v-html="getSinger(item.singer)"></div>
 		  						<div class="album" v-html="item.albumname"></div>
 		  						<div class="duration">{{getDuration(item.interval)}}</div>
@@ -825,7 +824,8 @@ export default {
       		}
       		.option-wrapper{
       			position: relative;
-      			margin-left: 30px;
+				margin-left: 30px;
+				top: 4px;
       			.iconfont{
       				font-size: 20px;
       				margin-left: 15px;
