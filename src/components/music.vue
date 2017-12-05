@@ -29,7 +29,7 @@
 	  					<div class="result-list-wrapper flex1">
 	  						<div class="result-list" v-for="(item, index) in songList" :class="{'active': song.songid === item.songid}" @click.stop="getSong(item, index)">
 		  						<a class="option iconfont icon-jia" title="添加到我现在想听的" v-if="songType !== '3'" @click.stop="addFavor(item)"></a>
-                  <a class="option iconfont icon-Untitled"  title="从我想听的中移除" v-else  @click.stop="removeFavor(index)"></a>
+                  <a class="option iconfont icon-sub"  title="从我想听的中移除" v-else  @click.stop="removeFavor(index)"></a>
                   <div class="songname" v-html="item.songname"></div>
 		  						<div class="singer" v-html="getSinger(item.singer)"></div>
 		  						<div class="album" v-html="item.albumname"></div>
