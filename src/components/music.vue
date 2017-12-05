@@ -113,7 +113,7 @@ export default {
 	    		songSrc: '',
 	    		imgSrc: '',
 	    		duration: 0,
-	    		songProgress: 0,
+				songProgress: 0,
 	    		voiceProgress: 50,
 	    		lyric: {},
 	    		currentTime: 0,
@@ -198,9 +198,9 @@ export default {
 	        Func.toast('请检查网络');
 	        this.pause();
 	    });
-	    this.$refs.audio.addEventListener('waiting',function(){  
-	    	Func.toast('加载中');
-	        this.pause();
+	    this.$refs.audio.addEventListener('waiting',function(){
+	    	// Func.toast('加载中');
+	        // this.pause();
 	    });
 
       document.onkeydown = function(event) {
@@ -309,9 +309,9 @@ export default {
   				this.historySongList.splice(99, 1);
   			}
   			this.historySongList = [song].concat(this.historySongList);
-        if (this.songType === '2') {
-          this.songList = this.historySongList;
-        }
+			if (this.songType === '2') {
+				this.songList = this.historySongList;
+			}
   			Func.setStorage('Fee_historySongList', JSON.stringify(this.historySongList));
   		},
   		getSong(song, index) {
@@ -335,7 +335,7 @@ export default {
   				songSrc: 'http://dl.stream.qqmusic.qq.com/'+song.songid+'.m4a?fromtag=66',
   				imgSrc: 'https://y.gtimg.cn/music/photo_new/T002R300x300M000' + song.albummid + '.jpg?max_age=2592000',
   				duration: song.interval,
-  				songProgress: 0,
+				songProgress: 0,
   				voiceProgress: voiceProgress,
   				lyric: {},
   				currentTime: 0,
@@ -497,25 +497,25 @@ export default {
   			}
   		},
   		addFavor(song) {
-        for(let i = 0, len = this.favorSongList.length;i < len;i ++) {
-          if (song.songid === this.favorSongList[i].songid) {
-            Func.toast('已存在');
-            return;
-          }
-        }
-        if (this.favorSongList.length >= 100) {
-          Func.toast('超过限制');
-          return;
-        }
-        this.favorSongList = [song].concat(this.favorSongList);
+			for(let i = 0, len = this.favorSongList.length;i < len;i ++) {
+			if (song.songid === this.favorSongList[i].songid) {
+				Func.toast('已存在');
+				return;
+			}
+			}
+			if (this.favorSongList.length >= 100) {
+			Func.toast('超过限制');
+			return;
+			}
+			this.favorSongList = [song].concat(this.favorSongList);
   			Func.toast('添加成功');
-        Func.setStorage('Fee_favorSongList', JSON.stringify(this.favorSongList));
+        	Func.setStorage('Fee_favorSongList', JSON.stringify(this.favorSongList));
   		},
-      removeFavor(index) {
-        this.favorSongList.splice(index, 1);
-        Func.toast('移除成功');
-        Func.setStorage('Fee_favorSongList', JSON.stringify(this.favorSongList));
-      }
+		removeFavor(index) {
+			this.favorSongList.splice(index, 1);
+			Func.toast('移除成功');
+			Func.setStorage('Fee_favorSongList', JSON.stringify(this.favorSongList));
+		}
   	}
 }
 </script>
@@ -787,6 +787,7 @@ export default {
 					background-color: #ccc;
 					border-radius: 5px;
 					margin: 10px 0;
+					position: relative;
 					.current{
 						width: 50%;
 						height: 100%;
